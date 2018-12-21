@@ -9,7 +9,7 @@
             "type": "node",
             "request": "launch",
             "name": "启动程序",
-            "program": "${workspaceFolder}/lession4/index.js"
+            "program": "${workspaceFolder}/lession6/index.js"
         }
     ]
 }

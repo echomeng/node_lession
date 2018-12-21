@@ -6,35 +6,37 @@ var eventproxy = require('eventproxy');
 var baseurl = 'https://cnodejs.org/';
 superagent.get(baseurl)
     .end(function(err, res){
-        if(err) return console.error(err);
-        var topicURLs = [];
+        if (err) return console.error(err);
         var $ = cheerio.load(res.text);
-        $('#topic_list .topic_title').each(function(idx, element){
+        var topicurls = [];
+        $('#topic_list .topic_title').each(function(index, element){
             var $element = $(element);
-            var href = url.resolve(baseurl, $element.attr('href'));
-            topicURLs.push(href);
+            var href = $element.attr('href');
+            topicurls.push(url.resolve(baseurl, href));
         });
-
-        var ep = new eventproxy;
-        ep.after('topic_html', topicURLs.length, function(topics){
-            topics = topics.map(function(topicPair){
-                var topicURL = topicPair[0];
-                var topicHTML = topicPair[1];
-                var $ = cheerio.load(topicHTML);
-                return ({
-                    title: $('.topic_full_title').text().trim(),
-                    herf: topicURL,
-                    comment: $('.reply_content').eq(0).text().trim(),
+        var ep = new eventproxy();
+        ep.after('topic_comment_url', topicurls.length,function(topics){
+            var result = [];
+            topics.forEach(function(topic){
+                var topicurl = topic[0];
+                var commentHTML = topic[1];
+                var $ = cheerio.load(commentHTML);
+                var onetitle = $('.topic_full_title').text().trim();
+                var first_comment = $('.reply_content').eq(0).text().trim();
+                result.push({
+                    title: onetitle,
+                    href: topicurl,
+                    first_comment: first_comment
                 });
-            });
-            console.log('final:');
-            console.log(topics);
+            })
+            console.log('finish');
+            console.log(result);
         });
-        topicURLs.forEach(function(topicurl){
+        topicurls.forEach(function(topicurl){
             superagent.get(topicurl)
-                .end(function(err, res){
-                    console.log('fetch'+topicurl+'successful');
-                    ep.emit('topic_html', [topicurl, res.text]);
+                .end(function(error, res){
+                    console.log('fetch '+topicurl+' successful');
+                    ep.emit('topic_comment_url', [topicurl, res.text]);
                 });
         });
     });
